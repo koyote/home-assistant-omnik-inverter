@@ -9,8 +9,8 @@
           "host": "[%key:common::config_flow::data::host%]"
         }
       },
-      "setup_html": {
-        "title": "Omnik Inverter - HTML",
+      "setup_html_or_cgi": {
+        "title": "Omnik Inverter - HTML or CGI",
         "description": "Set up Omnik Inverter to integrate with Home Assistant.",
         "data": {
           "name": "[%key:common::config_flow::data::name%]",

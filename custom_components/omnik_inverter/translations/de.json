@@ -9,8 +9,8 @@
                     "host": "Host"
                 }
             },
-            "setup_html": {
-                "title": "Omnik Inverter - HTML",
+            "setup_html_or_cgi": {
+                "title": "Omnik Inverter - HTML oder CGI",
                 "description": "Konfiguriere die Verbindung zu deiner Datenquelle, die für Omnik Inverter verwendet werden soll.",
                 "data": {
                     "name": "Name",

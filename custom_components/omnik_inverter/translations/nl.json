@@ -9,8 +9,8 @@
                     "host": "Host"
                 }
             },
-            "setup_html": {
-                "title": "Omnik Inverter - HTML",
+            "setup_html_or_cgi": {
+                "title": "Omnik Inverter - HTML of CGI",
                 "description": "Stel Omnik Inverter in om te integreren met Home Assistant.",
                 "data": {
                     "name": "Naam",

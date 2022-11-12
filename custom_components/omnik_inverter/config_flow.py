@@ -63,13 +63,13 @@ class OmnikInverterFlowHandler(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             user_selection = user_input[CONF_TYPE]
             self.source_type = user_selection.lower()
-            if user_selection == "HTML":
-                return await self.async_step_setup_html()
+            if user_selection == "HTML" or user_selection == "CGI":
+                return await self.async_step_setup_html_or_cgi()
             elif user_selection == "TCP":
                 return await self.async_step_setup_tcp()
             return await self.async_step_setup()
 
-        list_of_types = ["Javascript", "JSON", "HTML", "TCP"]
+        list_of_types = ["Javascript", "JSON", "HTML", "TCP", "CGI"]
 
         schema = vol.Schema({vol.Required(CONF_TYPE): vol.In(list_of_types)})
         return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
@@ -114,10 +114,10 @@ class OmnikInverterFlowHandler(ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_setup_html(
+    async def async_step_setup_html_or_cgi(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Handle setup flow for html route."""
+        """Handle setup flow for html and cgi route."""
         errors = {}
 
         if user_input is not None:
@@ -146,7 +146,7 @@ class OmnikInverterFlowHandler(ConfigFlow, domain=DOMAIN):
                 )
 
         return self.async_show_form(
-            step_id="setup_html",
+            step_id="setup_html_or_cgi",
             data_schema=vol.Schema(
                 {
                     vol.Optional(
