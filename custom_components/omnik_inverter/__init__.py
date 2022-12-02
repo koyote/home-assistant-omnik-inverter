@@ -99,7 +99,7 @@ class OmnikInverterDataUpdateCoordinator(DataUpdateCoordinator[OmnikInverterData
             update_interval=scan_interval,
         )
 
-        if self.config_entry.data[CONF_SOURCE_TYPE] == "html":
+        if self.config_entry.data[CONF_SOURCE_TYPE] == "html" or self.config_entry.data[CONF_SOURCE_TYPE] == "cgi":
             self.omnikinverter = OmnikInverter(
                 host=self.config_entry.data[CONF_HOST],
                 source_type=self.config_entry.data[CONF_SOURCE_TYPE],
