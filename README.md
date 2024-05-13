@@ -50,12 +50,17 @@ This is how your custom_components directory should be:
 custom_components
 ├── omnik_inverter
 │   ├── translations
+│   │   ├── de.json
 │   │   ├── en.json
 │   │   └── nl.json
 │   ├── __init__.py
+│   ├── binary_sensor.py
 │   ├── config_flow.py
 │   ├── const.py
+│   ├── coordinator.py
+│   ├── diagnostics.py
 │   ├── manifest.json
+│   ├── models.py
 │   ├── sensor.py
 │   └── strings.json
 ```
@@ -110,7 +115,7 @@ Special thank you to [@klaasnicolaas](https://github.com/klaasnicolaas) for taki
 [code-quality-url]: https://lgtm.com/projects/g/robbinjanssen/home-assistant-omnik-inverter/context:python
 [maintainability-shield]: https://api.codeclimate.com/v1/badges/08d56a884fe1971d1c12/maintainability
 [maintainability-url]: https://codeclimate.com/github/robbinjanssen/home-assistant-omnik-inverter/maintainability
-[maintenance-shield]: https://img.shields.io/maintenance/yes/2022.svg
+[maintenance-shield]: https://img.shields.io/maintenance/yes/2024.svg
 [project-stage-shield]: https://img.shields.io/badge/project%20stage-stable-brightgreen.svg?style=for-the-badge
 
 [hacs-url]: https://github.com/hacs/integration

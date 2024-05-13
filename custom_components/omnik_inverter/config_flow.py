@@ -4,9 +4,7 @@ from __future__ import annotations
 import socket
 from typing import Any
 
-from omnikinverter import OmnikInverter, OmnikInverterError
 import voluptuous as vol
-
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
 from homeassistant.const import (
     CONF_HOST,
@@ -17,24 +15,45 @@ from homeassistant.const import (
 )
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers.selector import (
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
+)
+from omnikinverter import OmnikInverter, OmnikInverterError
 
 from .const import (
     CONF_SCAN_INTERVAL,
-    CONF_SOURCE_TYPE,
     CONF_SERIAL,
+    CONF_SOURCE_TYPE,
+    CONF_USE_CACHE,
     CONFIGFLOW_VERSION,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    LOGGER,
 )
 
 
 async def validate_input(user_input: dict[str, Any]) -> str | None:
-    """Validate the user input."""
+    """
+    Validate the given user input.
+
+    Args:
+        user_input: The user input.
+
+    Returns:
+        The host name of the inverter
+
+    Raises:
+        Exception: If the host could not be validated.
+    """
     host = user_input[CONF_HOST]
     try:
         return socket.gethostbyname(host)
-    except socket.gaierror:
-        raise Exception("invalid_host")
+    except socket.gaierror as exc:
+        raise Exception(  # pylint: disable=broad-exception-raised
+            "invalid_host"
+        ) from exc
 
 
 class OmnikInverterFlowHandler(ConfigFlow, domain=DOMAIN):
@@ -51,14 +70,30 @@ class OmnikInverterFlowHandler(ConfigFlow, domain=DOMAIN):
     def async_get_options_flow(
         config_entry: ConfigEntry,
     ) -> OmnikInverterOptionsFlowHandler:
-        """Get the options flow for this handler."""
+        """
+        Get the options flow for this handler.
+
+        Args:
+            config_entry: The ConfigEntry instance.
+
+        Returns:
+            The created config flow.
+        """
         return OmnikInverterOptionsFlowHandler(config_entry)
 
     async def async_step_user(
         self, user_input=None, errors: dict[str, str] | None = None
     ) -> FlowResult:
-        """Handle a flow initialized by the user."""
+        """
+        Handle a flow initialized by the user.
 
+        Args:
+            user_input: The input received from the user or none.
+            errors: A dict containing errors or none.
+
+        Returns:
+            The created config entry or a form to re-enter the user input with errors.
+        """
         errors = {}
         if user_input is not None:
             user_selection = user_input[CONF_TYPE]
@@ -67,6 +102,7 @@ class OmnikInverterFlowHandler(ConfigFlow, domain=DOMAIN):
                 return await self.async_step_setup_html_or_cgi()
             elif user_selection == "TCP":
                 return await self.async_step_setup_tcp()
+
             return await self.async_step_setup()
 
         list_of_types = ["Javascript", "JSON", "HTML", "TCP", "CGI"]
@@ -77,7 +113,15 @@ class OmnikInverterFlowHandler(ConfigFlow, domain=DOMAIN):
     async def async_step_setup(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Handle setup flow for the JS and JSON route."""
+        """
+        Handle setup flow for the JS and JSON route.
+
+        Args:
+            user_input: The input received from the user or none.
+
+        Returns:
+            The created config entry or a form to re-enter the user input with errors.
+        """
         errors = {}
 
         if user_input is not None:
@@ -89,8 +133,9 @@ class OmnikInverterFlowHandler(ConfigFlow, domain=DOMAIN):
                 ) as client:
                     await client.inverter()
             except OmnikInverterError:
+                LOGGER.exception("Failed to connect to the Omnik")
                 errors["base"] = "cannot_connect"
-            except Exception as error:  # pylint: disable=broad-except
+            except Exception as error:  # pylint: disable=broad-exception-caught
                 errors["base"] = str(error)
             else:
                 return self.async_create_entry(
@@ -117,7 +162,15 @@ class OmnikInverterFlowHandler(ConfigFlow, domain=DOMAIN):
     async def async_step_setup_html_or_cgi(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Handle setup flow for html and cgi route."""
+        """
+        Handle setup flow for the HTML and cgi route.
+
+        Args:
+            user_input: The input received from the user or none.
+
+        Returns:
+            The created config entry or a form to re-enter the user input with errors.
+        """
         errors = {}
 
         if user_input is not None:
@@ -131,8 +184,9 @@ class OmnikInverterFlowHandler(ConfigFlow, domain=DOMAIN):
                 ) as client:
                     await client.inverter()
             except OmnikInverterError:
+                LOGGER.exception("Failed to connect to the Omnik")
                 errors["base"] = "cannot_connect"
-            except Exception as error:  # pylint: disable=broad-except
+            except Exception as error:  # pylint: disable=broad-exception-caught
                 errors["base"] = str(error)
             else:
                 return self.async_create_entry(
@@ -163,7 +217,15 @@ class OmnikInverterFlowHandler(ConfigFlow, domain=DOMAIN):
     async def async_step_setup_tcp(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Handle setup flow for TCP route."""
+        """
+        Handle setup flow for the TCP route.
+
+        Args:
+            user_input: The input received from the user or none.
+
+        Returns:
+            The created config entry or a form to re-enter the user input with errors.
+        """
         errors = {}
 
         if user_input is not None:
@@ -176,6 +238,7 @@ class OmnikInverterFlowHandler(ConfigFlow, domain=DOMAIN):
                 ) as client:
                     await client.inverter()
             except OmnikInverterError:
+                LOGGER.exception("Failed to connect to the Omnik")
                 errors["base"] = "cannot_connect"
             except Exception as error:  # pylint: disable=broad-except
                 errors["base"] = str(error)
@@ -208,26 +271,95 @@ class OmnikInverterOptionsFlowHandler(OptionsFlow):
     """Handle options."""
 
     def __init__(self, config_entry: ConfigEntry) -> None:
-        """Initialize options flow."""
+        """
+        Initialize options flow.
+
+        Args:
+            config_entry: The ConfigEntry instance.
+        """
         self.config_entry = config_entry
+        self.source_type = config_entry.data[CONF_SOURCE_TYPE]
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Mange the options."""
+        """
+        Handle a flow initialized by the user.
+
+        Args:
+            user_input: The input received from the user or none.
+
+        Returns:
+            The created config entry.
+        """
+        errors = {}
+
         if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+            try:
+                await validate_input(user_input)
+            except OmnikInverterError:
+                LOGGER.exception("Failed to connect to the Omnik")
+                errors["base"] = "cannot_connect"
+            except Exception as error:  # pylint: disable=broad-except
+                errors["base"] = str(error)
+            else:
+                updated_config = {CONF_SOURCE_TYPE: self.source_type}
+                for key in (CONF_HOST, CONF_USERNAME, CONF_PASSWORD, CONF_SERIAL):
+                    if key in user_input:
+                        updated_config[key] = user_input[key]
+
+                self.hass.config_entries.async_update_entry(
+                    self.config_entry,
+                    data=updated_config,
+                    title=user_input.get(CONF_NAME),
+                )
+
+                options = {}
+                for key in (CONF_SCAN_INTERVAL, CONF_USE_CACHE):
+                    options[key] = user_input[key]
+                return self.async_create_entry(title="", data=options)
+
+        fields = {
+            vol.Optional(
+                CONF_NAME,
+                default=self.config_entry.title,
+            ): str,
+            vol.Required(
+                CONF_HOST,
+                default=self.config_entry.data.get(CONF_HOST),
+            ): str,
+        }
+
+        if self.source_type == "html":
+            fields[
+                vol.Required(
+                    CONF_USERNAME, default=self.config_entry.data.get(CONF_USERNAME)
+                )
+            ] = str
+            fields[
+                vol.Required(
+                    CONF_PASSWORD, default=self.config_entry.data.get(CONF_PASSWORD)
+                )
+            ] = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
+        elif self.source_type == "tcp":
+            fields[
+                vol.Required(
+                    CONF_SERIAL, default=self.config_entry.data.get(CONF_SERIAL)
+                )
+            ] = int
+
+        fields[
+            vol.Optional(
+                CONF_SCAN_INTERVAL,
+                default=self.config_entry.options.get(
+                    CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
+                ),
+            )
+        ] = vol.All(vol.Coerce(int), vol.Range(min=1))
+        fields[vol.Optional(CONF_USE_CACHE, default=False)] = bool
 
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema(
-                {
-                    vol.Optional(
-                        CONF_SCAN_INTERVAL,
-                        default=self.config_entry.options.get(
-                            CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
-                        ),
-                    ): vol.All(vol.Coerce(int), vol.Range(min=1)),
-                }
-            ),
+            data_schema=vol.Schema(fields),
+            errors=errors,
         )
